@@ -10,7 +10,7 @@ interface Point {
     y: number;
 }
 
-const cursor = { isDrawing: false, points: [] as Point[] };
+const cursor = { isDrawing: false, points: [] as Point[][] };
 
 // Title
 const title = document.createElement('h1');
@@ -40,13 +40,15 @@ function dispatchDrawingChanged() {
 
 function addPoint(x: number, y: number) {
     const newPoint: Point = { x, y };
-    cursor.points.push(newPoint);
+    if (cursor.points.length > 0) {
+        cursor.points[cursor.points.length - 1].push(newPoint); // Add point to the current stroke
+    }
     dispatchDrawingChanged();
 }
 
 function startDrawing(event: MouseEvent, canvas: HTMLCanvasElement) {
     cursor.isDrawing = true;
-    cursor.points = [];
+    cursor.points.push([]);
     addPoint(event.offsetX, event.offsetY);
 }
 
@@ -58,22 +60,26 @@ function draw(event: MouseEvent, canvas: HTMLCanvasElement) {
 
 function stopDrawing() {
     cursor.isDrawing = false;
+    dispatchDrawingChanged();
 }
 
 function drawingChanged() {
     if (!ctx) return;
 
-    ctx.strokeStyle = 'black'; 
-    ctx.lineWidth = 2; 
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
     ctx.lineCap = 'round';
 
-    if (cursor.points.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(cursor.points[0].x, cursor.points[0].y);
-        for (const point of cursor.points) {
-            ctx.lineTo(point.x, point.y);
+    for (const stroke of cursor.points) {
+        if (stroke.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(stroke[0].x, stroke[0].y);
+            for (const point of stroke) {
+                ctx.lineTo(point.x, point.y);
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
     }
 }
 
@@ -86,6 +92,40 @@ clearButton.addEventListener("click", () => {
     if (canvas) {
         if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            cursor.points.length = 0;
+        }
+    }
+});
+
+const redoStack: Point[][] = [];
+
+// Undo button 
+const undoButton = document.createElement('button');
+app.appendChild(undoButton);
+undoButton.innerText = "undo";
+
+
+undoButton.addEventListener("click", () => {
+    if (cursor.points.length > 0) {
+        const lastStroke = cursor.points.pop();
+        if (lastStroke) {
+            redoStack.push(lastStroke);
+        }
+        dispatchDrawingChanged();
+    }
+});
+
+// Redo button 
+const redoButton = document.createElement('button');
+app.appendChild(redoButton);
+redoButton.innerText = "Redo";
+
+redoButton.addEventListener("click", () => {
+    if (redoStack.length > 0) {
+        const pointsToRedo = redoStack.pop();
+        if (pointsToRedo) {
+            cursor.points.push(pointsToRedo);
+            dispatchDrawingChanged();
         }
     }
 });
