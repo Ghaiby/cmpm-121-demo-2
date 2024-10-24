@@ -17,9 +17,6 @@ interface MarkerLine {
     thickness: number;
 }
 
-interface MarkerTool {
-    thickness: number;
-}
 function createMarkerLine(initialPoint: Point): MarkerLine {
     return {
         thickness: cursor.tool.thickness,
@@ -41,7 +38,30 @@ function createMarkerLine(initialPoint: Point): MarkerLine {
     };
 }
 
-const cursor = { isDrawing: false, lines: [] as MarkerLine[], tool: {thickness: 2} as MarkerTool };
+interface MarkerTool {
+    thickness: number;
+    x: number;
+    y: number;
+    draw(ctx: CanvasRenderingContext2D): void;
+}
+
+function createMarkerTool(thickness: number): MarkerTool {
+    return {
+        thickness,
+        x: 0,
+        y: 0,
+        draw(ctx: CanvasRenderingContext2D) {
+            if(!cursor.isDrawing){
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.thickness, 0, Math.PI * 2);
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+            }
+        },
+    };
+}
+
+const cursor = { isDrawing: false, lines: [] as MarkerLine[], tool: createMarkerTool(2) as MarkerTool,};
 
 // Title
 const title = document.createElement('h1');
@@ -58,7 +78,10 @@ const ctx = canvas.getContext("2d");
 
 // Add mouse event listeners for drawing
 canvas.addEventListener('mousedown', (event) => startDrawing(event));
-canvas.addEventListener('mousemove', (event) => draw(event));
+canvas.addEventListener('mousemove', (event) => {
+    draw(event);
+    toolMoved(event);
+});
 canvas.addEventListener('mouseup', stopDrawing);
 canvas.addEventListener('mouseout', stopDrawing);
 canvas.addEventListener("drawing-changed", drawingChanged);
@@ -92,7 +115,17 @@ function drawingChanged() {
     for (const stroke of cursor.lines) {
         stroke.display(ctx);
     }
+    cursor.tool.draw(ctx)
 }
+
+function toolMoved(event: MouseEvent) {
+    if (!cursor.isDrawing) {
+        cursor.tool.x = event.offsetX;
+        cursor.tool.y = event.offsetY;
+        drawingChanged()
+    }
+}
+
 
 const buttonsContainer = document.createElement('div');
 buttonsContainer.id = "buttons-container";
