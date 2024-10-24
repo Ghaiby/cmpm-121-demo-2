@@ -14,10 +14,15 @@ interface MarkerLine {
     points: Point[];
     drag(x: number, y: number): void;
     display(ctx: CanvasRenderingContext2D): void;
+    thickness: number;
 }
 
+interface MarkerTool {
+    thickness: number;
+}
 function createMarkerLine(initialPoint: Point): MarkerLine {
     return {
+        thickness: cursor.tool.thickness,
         points: [initialPoint],
         drag(x: number, y: number) {
             this.points.push({ x, y });
@@ -25,6 +30,7 @@ function createMarkerLine(initialPoint: Point): MarkerLine {
         display(ctx: CanvasRenderingContext2D) {
             if (this.points.length > 0) {
                 ctx.beginPath();
+                ctx.lineWidth = this.thickness;
                 ctx.moveTo(this.points[0].x, this.points[0].y);
                 for (const point of this.points) {
                     ctx.lineTo(point.x, point.y);
@@ -35,7 +41,7 @@ function createMarkerLine(initialPoint: Point): MarkerLine {
     };
 }
 
-const cursor = { isDrawing: false, lines: [] as MarkerLine[] };
+const cursor = { isDrawing: false, lines: [] as MarkerLine[], tool: {thickness: 2} as MarkerTool };
 
 // Title
 const title = document.createElement('h1');
@@ -81,7 +87,6 @@ function drawingChanged() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = 'black';
-    ctx.lineWidth = 2;
     ctx.lineCap = 'round';
 
     for (const stroke of cursor.lines) {
@@ -136,3 +141,23 @@ redoButton.addEventListener("click", () => {
         }
     }
 });
+
+const thinButton = document.createElement('button');
+thinButton.innerText = "Thin Marker";
+thinButton.addEventListener("click", () => {
+    cursor.tool.thickness = 2;
+    thinButton.classList.add("selectedTool");
+    thickButton.classList.remove("selectedTool");
+});
+buttonsContainer.appendChild(thinButton);
+
+// Thick marker button
+const thickButton = document.createElement('button');
+thickButton.innerText = "Thick Marker";
+thickButton.addEventListener("click", () => {
+    cursor.tool.thickness = 6;
+    thickButton.classList.add("selectedTool");
+    thinButton.classList.remove("selectedTool");
+});
+buttonsContainer.appendChild(thickButton);
+
