@@ -287,26 +287,31 @@ const stickersContainer = document.createElement('div');
 stickersContainer.id = "stickers-container";
 app.appendChild(stickersContainer);
 
-const footballButton = document.createElement('button');
-footballButton.innerText = "🏈";
-footballButton.addEventListener("click", (event) => {
-    changeSticker("🏈"),
-    toolMoved(event)
-});
-stickersContainer.appendChild(footballButton);
+const stickers = ["🏈","🏀","⚽"]
 
-const bballButton = document.createElement('button');
-bballButton.innerText = "🏀";
-bballButton.addEventListener("click", (event) => {
-    changeSticker("🏀"),
-    toolMoved(event)
-});
-stickersContainer.appendChild(bballButton);
+function getCustomSticker(): string | null {
+    const text = prompt("Custom sticker text","");
+    return text; 
+}
+function createStickerButton(image: string | null){
+    if (!image){ return }
+    const button = document.createElement('button');
+    button.innerText = image;
+    button.addEventListener("click", (event) => {
+        changeSticker(image),
+        toolMoved(event)
+    });
+    stickersContainer.appendChild(button);
+}
 
-const soccerButton = document.createElement('button');
-soccerButton.innerText = "⚽";
-soccerButton.addEventListener("click", (event) => {
-    changeSticker("⚽"),
+const customButton = document.createElement('button'); 
+customButton.innerText = "Custom";
+customButton.addEventListener("click", (event) => {
+    createStickerButton(getCustomSticker()),
     toolMoved(event)
 });
-stickersContainer.appendChild(soccerButton);
+stickersContainer.appendChild(customButton);
+
+for(const image of stickers){
+    createStickerButton(image);
+}
