@@ -19,7 +19,7 @@ interface MarkerLine {
 
 function createMarkerLine(initialPoint: Point): MarkerLine {
     return {
-        thickness: cursor.tool.thickness,
+        thickness: cursor.marker.thickness,
         points: [initialPoint],
         drag(x: number, y: number) {
             this.points.push({ x, y });
@@ -47,11 +47,12 @@ interface MarkerTool {
 
 function createMarkerTool(thickness: number): MarkerTool {
     return {
-        thickness,
+        thickness ,
         x: 0,
         y: 0,
         draw(ctx: CanvasRenderingContext2D) {
             if(!cursor.isDrawing){
+                ctx.lineWidth = this.thickness;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.thickness, 0, Math.PI * 2);
                 ctx.strokeStyle = 'black';
@@ -61,7 +62,62 @@ function createMarkerTool(thickness: number): MarkerTool {
     };
 }
 
-const cursor = { isDrawing: false, lines: [] as MarkerLine[], tool: createMarkerTool(2) as MarkerTool,};
+interface Sticker {
+    style: string,
+    x: number,
+    y: number,
+    drag(x: number, y: number) : void,
+    display(ctx: CanvasRenderingContext2D): void;
+}
+
+function createSticker(x: number, y: number, style: string){
+    return {
+        style,
+        x,
+        y,
+        drag(x: number, y: number){
+            this.x = x,
+            this.y = y 
+        },
+        display(ctx: CanvasRenderingContext2D){
+            ctx.font = "30px Arial";
+            ctx.fillText(this.style, this.x, this.y);
+        }
+    }
+}
+
+interface StickerTool {
+    style: string;
+    x: number;
+    y: number;
+    mode: "on" | "off";
+    draw(ctx: CanvasRenderingContext2D): void;
+}
+
+function createStickerTool(style: string): StickerTool {
+    return {
+        style,
+        mode: "off",
+        x: 0,
+        y: 0,
+        draw(ctx: CanvasRenderingContext2D) {
+            if(!cursor.isDrawing){
+                ctx.font = "30px Arial";
+                ctx.globalAlpha = 0.5;
+                ctx.fillText(this.style, this.x, this.y);
+                ctx.globalAlpha = 1;
+            }
+        },
+    };
+}
+
+const cursor = { 
+    isDrawing: false,
+    lines: [] as MarkerLine[],
+    marker: createMarkerTool(2) as MarkerTool,
+    sticker: createStickerTool("") as StickerTool,
+    stickerList: [] as Sticker[],
+};
 
 // Title
 const title = document.createElement('h1');
@@ -89,21 +145,38 @@ canvas.addEventListener("drawing-changed", drawingChanged);
 
 function startDrawing(event: MouseEvent) {
     cursor.isDrawing = true;
-    const newLine = createMarkerLine({ x: event.offsetX, y: event.offsetY });
-    cursor.lines.push(newLine);
+    if(cursor.sticker.mode == "on"){
+        const newSticker = createSticker(  event.offsetX, event.offsetY, cursor.sticker.style);
+        cursor.stickerList.push(newSticker);
+    }else{
+        const newLine = createMarkerLine({ x: event.offsetX, y: event.offsetY });
+        cursor.lines.push(newLine);
+    }
 }
 
 function draw(event: MouseEvent) {
-    if (!cursor.isDrawing || cursor.lines.length === 0) return;
+    if (!cursor.isDrawing) return;
+    if(cursor.sticker.mode == "on"){
+        const currentSticker = cursor.stickerList[cursor.stickerList.length - 1];
+        currentSticker.drag(event.offsetX, event.offsetY)
+    }else{
+        const currentLine = cursor.lines[cursor.lines.length - 1];
+        currentLine.drag(event.offsetX, event.offsetY);
+    }
 
-    const currentLine = cursor.lines[cursor.lines.length - 1];
-    currentLine.drag(event.offsetX, event.offsetY);
     drawingChanged()
 }
 
 function stopDrawing() {
     cursor.isDrawing = false;
     drawingChanged()
+}
+function showPreview(ctx: CanvasRenderingContext2D){
+    if (cursor.sticker.mode === "off"){
+        cursor.marker.draw(ctx)
+    }else{
+        cursor.sticker.draw(ctx)
+    }
 }
 
 function drawingChanged() {
@@ -115,17 +188,37 @@ function drawingChanged() {
     for (const stroke of cursor.lines) {
         stroke.display(ctx);
     }
-    cursor.tool.draw(ctx)
+
+    for(const sticker of cursor.stickerList){
+        sticker.display(ctx);
+    }
+
+    showPreview(ctx)
 }
 
 function toolMoved(event: MouseEvent) {
     if (!cursor.isDrawing) {
-        cursor.tool.x = event.offsetX;
-        cursor.tool.y = event.offsetY;
+        cursor.marker.x = event.offsetX;
+        cursor.marker.y = event.offsetY;
+        cursor.sticker.x = event.offsetX;
+        cursor.sticker.y = event.offsetY;
         drawingChanged()
     }
 }
 
+function changeSticker(style: string){
+    cursor.sticker.mode = "on";
+    cursor.sticker.style = style; 
+}
+// change thickness of marker and which button is shown as selected
+// select: button that becomes selcted
+// unselect: button that is unselected
+function changeMarker(thickness: number, selected: HTMLButtonElement, unselected: HTMLButtonElement){
+    cursor.sticker.mode = "off";
+    cursor.marker.thickness = thickness;
+    selected.classList.add("selectedTool");
+    unselected.classList.remove("selectedTool");
+}
 
 const buttonsContainer = document.createElement('div');
 buttonsContainer.id = "buttons-container";
@@ -140,7 +233,11 @@ clearButton.addEventListener("click", () => {
     if (canvas) {
         if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (const line of cursor.lines){
+                redoStack.push(line);
+            }
             cursor.lines.length = 0;
+            cursor.stickerList.length = 0;
         }
     }
 });
@@ -177,20 +274,39 @@ redoButton.addEventListener("click", () => {
 
 const thinButton = document.createElement('button');
 thinButton.innerText = "Thin Marker";
-thinButton.addEventListener("click", () => {
-    cursor.tool.thickness = 2;
-    thinButton.classList.add("selectedTool");
-    thickButton.classList.remove("selectedTool");
-});
+thinButton.addEventListener("click",() => changeMarker(2, thinButton, thickButton));
 buttonsContainer.appendChild(thinButton);
 
 // Thick marker button
 const thickButton = document.createElement('button');
 thickButton.innerText = "Thick Marker";
-thickButton.addEventListener("click", () => {
-    cursor.tool.thickness = 6;
-    thickButton.classList.add("selectedTool");
-    thinButton.classList.remove("selectedTool");
-});
+thickButton.addEventListener("click",() => changeMarker(6, thickButton, thinButton));
 buttonsContainer.appendChild(thickButton);
 
+const stickersContainer = document.createElement('div');
+stickersContainer.id = "stickers-container";
+app.appendChild(stickersContainer);
+
+const footballButton = document.createElement('button');
+footballButton.innerText = "🏈";
+footballButton.addEventListener("click", (event) => {
+    changeSticker("🏈"),
+    toolMoved(event)
+});
+stickersContainer.appendChild(footballButton);
+
+const bballButton = document.createElement('button');
+bballButton.innerText = "🏀";
+bballButton.addEventListener("click", (event) => {
+    changeSticker("🏀"),
+    toolMoved(event)
+});
+stickersContainer.appendChild(bballButton);
+
+const soccerButton = document.createElement('button');
+soccerButton.innerText = "⚽";
+soccerButton.addEventListener("click", (event) => {
+    changeSticker("⚽"),
+    toolMoved(event)
+});
+stickersContainer.appendChild(soccerButton);
