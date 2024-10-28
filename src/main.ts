@@ -15,10 +15,12 @@ interface MarkerLine {
     drag(x: number, y: number): void;
     display(ctx: CanvasRenderingContext2D): void;
     thickness: number;
+    color: string; 
 }
 
 function createMarkerLine(initialPoint: Point): MarkerLine {
     return {
+        color: cursor.color,
         thickness: cursor.marker.thickness,
         points: [initialPoint],
         drag(x: number, y: number) {
@@ -28,6 +30,8 @@ function createMarkerLine(initialPoint: Point): MarkerLine {
             if (this.points.length > 0) {
                 ctx.beginPath();
                 ctx.lineWidth = this.thickness;
+                console.log(this.color)
+                ctx.strokeStyle = `rgb(${this.color},0,0)`;
                 ctx.moveTo(this.points[0].x, this.points[0].y);
                 for (const point of this.points) {
                     ctx.lineTo(point.x, point.y);
@@ -55,7 +59,6 @@ function createMarkerTool(thickness: number): MarkerTool {
                 ctx.lineWidth = this.thickness;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.thickness, 0, Math.PI * 2);
-                ctx.strokeStyle = 'black';
                 ctx.stroke();
             }
         },
@@ -117,6 +120,7 @@ const cursor = {
     marker: createMarkerTool(2) as MarkerTool,
     sticker: createStickerTool("") as StickerTool,
     stickerList: [] as Sticker[],
+    color: '0'
 };
 
 // Title
@@ -182,7 +186,6 @@ function showPreview(ctx: CanvasRenderingContext2D){
 function drawingChanged() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'black';
     ctx.lineCap = 'round';
 
     for (const stroke of cursor.lines) {
@@ -342,7 +345,6 @@ function exportCanvas() {
 function drawAll(ctx: CanvasRenderingContext2D) {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'black';
     ctx.lineCap = 'round';
 
     for (const stroke of cursor.lines) {
@@ -360,3 +362,33 @@ function downloadCanvasAsPNG(canvas: HTMLCanvasElement) {
     anchor.download = "sketchpad.png";
     anchor.click();    
 }
+
+const sliderContainer = document.createElement('div');
+
+const label = document.createElement('label');
+label.setAttribute('for', 'numberSlider');
+label.textContent = 'Stroke Color:';
+
+const numberSlider = document.createElement('input');
+numberSlider.type = 'range';
+numberSlider.id = 'numberSlider';
+numberSlider.min = '0';
+numberSlider.max = '255';
+numberSlider.value = '50';
+
+const sliderValueDisplay = document.createElement('span');
+sliderValueDisplay.id = 'sliderValue';
+sliderValueDisplay.textContent = '0';
+
+sliderContainer.appendChild(label);
+sliderContainer.appendChild(numberSlider);
+sliderContainer.appendChild(sliderValueDisplay);
+
+app.appendChild(sliderContainer);
+
+numberSlider.addEventListener('input', (event) => {
+    const value = (event.target as HTMLInputElement).value;
+    sliderValueDisplay.textContent = value;
+    cursor.color = value;
+});
+
