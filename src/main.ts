@@ -315,3 +315,48 @@ stickersContainer.appendChild(customButton);
 for(const image of stickers){
     createStickerButton(image);
 }
+
+const exportButton = document.createElement('button');
+exportButton.innerText = "Export";
+exportButton.addEventListener("click", () => {
+    exportCanvas();
+});
+app.appendChild(exportButton);
+
+function exportCanvas() {
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 1024;
+    exportCanvas.height = 1024;
+
+    const ctx = exportCanvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.scale(2, 2);
+
+    drawAll(ctx);
+
+    downloadCanvasAsPNG(exportCanvas);
+}
+
+// redraw the drawing on the new canvas without the preview
+function drawAll(ctx: CanvasRenderingContext2D) {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'black';
+    ctx.lineCap = 'round';
+
+    for (const stroke of cursor.lines) {
+        stroke.display(ctx);
+    }
+
+    for(const sticker of cursor.stickerList){
+        sticker.display(ctx);
+    }
+}
+
+function downloadCanvasAsPNG(canvas: HTMLCanvasElement) {
+    const anchor = document.createElement("a");
+    anchor.href = canvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    anchor.click();    
+}
