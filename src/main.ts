@@ -31,7 +31,7 @@ function createMarkerLine(initialPoint: Point): MarkerLine {
                 ctx.beginPath();
                 ctx.lineWidth = this.thickness;
                 console.log(this.color)
-                ctx.strokeStyle = `rgb(${this.color},0,0)`;
+                ctx.strokeStyle = this.color;
                 ctx.moveTo(this.points[0].x, this.points[0].y);
                 for (const point of this.points) {
                     ctx.lineTo(point.x, point.y);
@@ -399,7 +399,7 @@ colorPreview.style.backgroundColor = currColor;
 
 numberSlider.addEventListener('input', () => {
     currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
-    sliderValueDisplay.textContent = currColor;
+    sliderValueDisplay.textContent = numberSlider.value;
     colorPreview.style.backgroundColor = currColor;
     cursor.color = currColor;
 });
