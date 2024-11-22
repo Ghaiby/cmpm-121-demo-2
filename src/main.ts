@@ -394,13 +394,13 @@ sliderContainer.appendChild(colorPreview);
 
 app.appendChild(sliderContainer);
 
-const currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
+let currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
 colorPreview.style.backgroundColor = currColor;
 
-numberSlider.addEventListener('input', (event) => {
-    const value = (event.target as HTMLInputElement).value;
-    sliderValueDisplay.textContent = value;
+numberSlider.addEventListener('input', () => {
+    currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
+    sliderValueDisplay.textContent = currColor;
     colorPreview.style.backgroundColor = currColor;
-    cursor.color = value;
+    cursor.color = currColor;
 });
 
