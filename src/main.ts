@@ -380,12 +380,13 @@ const sliderValueDisplay = document.createElement('span');
 sliderValueDisplay.id = 'sliderValue';
 sliderValueDisplay.textContent = '0';
 
+//element to showcase the slider color------------------------------------------------------------------------------------------------------------------
 const colorPreview = document.createElement("div");
 colorPreview.style.display = "inline-block";
-colorPreview.style.width = "30px";
-colorPreview.style.height = "30px";
-colorPreview.style.marginLeft = "10px";
-colorPreview.style.border = "1px solid #000";
+colorPreview.style.width = "35px";
+colorPreview.style.height = "35px";
+colorPreview.style.marginLeft = "20px";
+colorPreview.style.border = "2px solid #000";
 
 sliderContainer.appendChild(label);
 sliderContainer.appendChild(numberSlider);
@@ -394,13 +395,13 @@ sliderContainer.appendChild(colorPreview);
 
 app.appendChild(sliderContainer);
 
-let currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
-colorPreview.style.backgroundColor = currColor;
+let color = `hsl(${numberSlider.value}, 100%, 50%)`;
+colorPreview.style.backgroundColor = color;
 
 numberSlider.addEventListener('input', () => {
-    currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
+    color = `hsl(${numberSlider.value}, 100%, 50%)`;
     sliderValueDisplay.textContent = numberSlider.value;
-    colorPreview.style.backgroundColor = currColor;
-    cursor.color = currColor;
+    colorPreview.style.backgroundColor = color;
+    cursor.color = color;
 });
 
