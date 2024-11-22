@@ -373,22 +373,34 @@ const numberSlider = document.createElement('input');
 numberSlider.type = 'range';
 numberSlider.id = 'numberSlider';
 numberSlider.min = '0';
-numberSlider.max = '255';
+numberSlider.max = '360';
 numberSlider.value = '50';
 
 const sliderValueDisplay = document.createElement('span');
 sliderValueDisplay.id = 'sliderValue';
 sliderValueDisplay.textContent = '0';
 
+const colorPreview = document.createElement("div");
+colorPreview.style.display = "inline-block";
+colorPreview.style.width = "30px";
+colorPreview.style.height = "30px";
+colorPreview.style.marginLeft = "10px";
+colorPreview.style.border = "1px solid #000";
+
 sliderContainer.appendChild(label);
 sliderContainer.appendChild(numberSlider);
 sliderContainer.appendChild(sliderValueDisplay);
+sliderContainer.appendChild(colorPreview);
 
 app.appendChild(sliderContainer);
+
+const currColor = `hsl(${numberSlider.value}, 100%, 50%)`;
+colorPreview.style.backgroundColor = currColor;
 
 numberSlider.addEventListener('input', (event) => {
     const value = (event.target as HTMLInputElement).value;
     sliderValueDisplay.textContent = value;
+    colorPreview.style.backgroundColor = currColor;
     cursor.color = value;
 });
 
